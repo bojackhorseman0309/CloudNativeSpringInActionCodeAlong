@@ -1,0 +1,3 @@
+[submodule "cloud-native-spring-in-action"]
+	path = cloud-native-spring-in-action
+	url = https://github.com/ThomasVitale/cloud-native-spring-in-action.git
