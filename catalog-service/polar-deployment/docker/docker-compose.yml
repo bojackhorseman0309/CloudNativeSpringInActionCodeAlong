@@ -1,13 +1,13 @@
-version: "3.8"
+version: '3.8'
 services:
   catalog-service:
     depends_on:
       - polar-postgres
-    image: "catalog-service"
-    container_name: "catalog-service"
+    image: 'catalog-service'
+    container_name: 'catalog-service'
     ports:
-      - "9001:9001"
-      - "8001:8001"
+      - '9001:9001'
+      - '8001:8001'
     environment:
       - BPL_JVM_THREAD_COUNT=50
       - BPL_DEBUG_ENABLED=true
@@ -16,11 +16,12 @@ services:
       - SPRING_PROFILES_ACTIVE=testdata
 
   polar-postgres:
-    image: "postgres:14.4"
-    container_name: "polar-postgres"
+    image: 'postgres:14.4'
+    container_name: 'polar-postgres'
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=polardb_catalog
+    volumes:
+      - ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql
