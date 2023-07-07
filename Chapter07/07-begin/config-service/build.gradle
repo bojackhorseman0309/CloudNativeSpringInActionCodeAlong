@@ -1,0 +1,47 @@
+plugins {
+    id 'java'
+	id 'org.springframework.boot' version '3.1.0'
+	id 'io.spring.dependency-management' version '1.1.0'
+}
+
+group = 'com.polarbookshop'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+description = 'Provides functionality for centralizing the application configuration.'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+	set('springCloudVersion', "2022.0.3")
+}
+
+dependencies {
+    implementation 'org.springframework.cloud:spring-cloud-config-server'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+bootBuildImage {
+    imageName = "${project.name}"
+    environment = ["BP_JVM_VERSION": "17.*"]
+
+    docker {
+        publishRegistry {
+            username = project.findProperty("registryUsername")
+            password = project.findProperty("registryToken")
+            url = project.findProperty("registryUrl")
+        }
+    }
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
