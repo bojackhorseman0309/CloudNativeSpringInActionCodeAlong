@@ -1,20 +1,75 @@
 name: Commit Stage
-on: push
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: bojackhorseman0309/catalog-service
-  VERSION: latest
+on:
+  push:
+  schedule: # Every Monday
+    - cron: '0 0 * * 1'
 
 jobs:
   build:
-    name: Build and Test
+    name: Build and Test ${{ matrix.project }}
     runs-on: ubuntu-22.04
     permissions:
       contents: read
       security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [
+          Chapter02/02-end/catalog-service,
+          Chapter03/03-end/catalog-service,
+          Chapter04/04-end/catalog-service,
+          Chapter04/04-end/config-service,
+          Chapter05/05-intermediate/catalog-service,
+          Chapter05/05-end/catalog-service,
+          Chapter05/05-end/catalog-service-jpa,
+          Chapter05/05-end/config-service,
+          Chapter06/06-end/catalog-service,
+          Chapter06/06-end/config-service,
+          Chapter07/07-end/catalog-service,
+          Chapter07/07-end/config-service,
+          Chapter08/08-end/catalog-service,
+          Chapter08/08-end/config-service,
+          Chapter08/08-end/order-service,
+          Chapter09/09-end/catalog-service,
+          Chapter09/09-end/config-service,
+          Chapter09/09-end/edge-service,
+          Chapter09/09-end/order-service,
+          Chapter10/10-intermediate/dispatcher-service,
+          Chapter10/10-end/catalog-service,
+          Chapter10/10-end/config-service,
+          Chapter10/10-end/order-service,
+          Chapter10/10-end/edge-service,
+          Chapter10/10-end/dispatcher-service,
+          Chapter11/11-end/catalog-service,
+          Chapter11/11-end/config-service,
+          Chapter11/11-end/order-service,
+          Chapter11/11-end/edge-service,
+          Chapter11/11-end/dispatcher-service,
+          Chapter12/12-end/catalog-service,
+          Chapter12/12-end/config-service,
+          Chapter12/12-end/order-service,
+          Chapter12/12-end/edge-service,
+          Chapter12/12-end/dispatcher-service,
+          Chapter13/13-end/catalog-service,
+          Chapter13/13-end/config-service,
+          Chapter13/13-end/order-service,
+          Chapter13/13-end/edge-service,
+          Chapter13/13-end/dispatcher-service,
+          Chapter14/14-end/catalog-service,
+          Chapter14/14-end/config-service,
+          Chapter14/14-end/order-service,
+          Chapter14/14-end/edge-service,
+          Chapter14/14-end/dispatcher-service,
+          Chapter15/15-end/catalog-service,
+          Chapter15/15-end/config-service,
+          Chapter15/15-end/order-service,
+          Chapter15/15-end/edge-service,
+          Chapter15/15-end/dispatcher-service,
+          Chapter16/16-end/quote-service,
+          Chapter16/16-end/quote-function,
+        ]
     steps:
-      - name: Checkout source code
+      - name: Checkout repository
         uses: actions/checkout@v3
       - name: Set up JDK
         uses: actions/setup-java@v3
@@ -22,71 +77,8 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: gradle
-      - name: Code vulnerability scanning
-        uses: anchore/scan-action@v3
-        id: scan
-        with:
-          path: '${{ github.workspace }}'
-          fail-build: false
-          severity-cutoff: high
-      - name: Upload vulnerability report
-        uses: github/codeql-action/upload-sarif@v2
-        if: success() || failure()
-        with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
       - name: Build, unit tests and integration tests
         run: |
-          cd catalog-service
+          cd ${{ matrix.project }}
           chmod +x gradlew
           ./gradlew build
-      - name: Validate Kubernetes manifests
-        uses: stefanprodan/kube-tools@v1
-        with:
-          kubectl: 1.24.3
-          kubeval: 0.16.1
-          command: |
-            kubeval --strict -d ./catalog-service/k8s
-  package:
-    name: Package and Publish
-    if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [build]
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: read
-      packages: write
-      security-events: write
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v3
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 17
-          cache: gradle
-      - name: Build container image
-        run: |
-          cd catalog-service
-          chmod +x ./gradlew
-          ./gradlew bootBuildImage \
-            --imageName ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
-      - name: OCI image vulnerability scanning
-        uses: anchore/scan-action@v3
-        id: scan
-        with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
-          fail-build: false
-          severity-cutoff: high
-      - name: Upload vulnerability report
-        uses: github/codeql-action/upload-sarif@v2
-        if: success() || failure()
-        with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
-      - name: Log into container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish container image
-        run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
